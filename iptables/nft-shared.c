@@ -846,6 +846,51 @@ void nft_ipv46_save_chain(const struct nftnl_chain *c, const char *policy)
 	       chain, policy ?: "-", pkts, bytes);
 }
 
+void wg_save_matches_and_target(const struct iptables_command_state *cs,
+			     bool goto_flag, const void *fw,
+			     unsigned int format)
+{
+	struct xtables_rule_match *matchp;
+    int count=0;
+	for (matchp = cs->matches; matchp; matchp = matchp->next) {
+        count++;
+    }
+    printf("\n@wg count %d.\n",count);
+	for (matchp = cs->matches; matchp; matchp = matchp->next) {
+		if (matchp->match->alias) {
+			printf("-m %s",
+			       matchp->match->alias(matchp->match->m));
+		} else
+			printf("-m %s", matchp->match->name);
+
+		if (matchp->match->save != NULL) {
+			/* cs->fw union makes the trick */
+            printf("\n@wg do for match.\n");
+			matchp->match->save(fw, matchp->match->m);
+		}
+		printf(" ");
+	}
+
+	if ((format & (FMT_NOCOUNTS | FMT_C_COUNTS)) == FMT_C_COUNTS)
+		printf("-c %llu %llu ",
+		       (unsigned long long)cs->counters.pcnt,
+		       (unsigned long long)cs->counters.bcnt);
+
+	if (cs->target != NULL) {
+		if (cs->target->alias) {
+			printf("-j %s", cs->target->alias(cs->target->t));
+		} else
+			printf("-j %s", cs->jumpto);
+
+		if (cs->target->save != NULL)
+			cs->target->save(fw, cs->target->t);
+	} else if (strlen(cs->jumpto) > 0) {
+		printf("-%c %s", goto_flag ? 'g' : 'j', cs->jumpto);
+	}
+
+	printf("\n");
+}
+
 void save_matches_and_target(const struct iptables_command_state *cs,
 			     bool goto_flag, const void *fw,
 			     unsigned int format)

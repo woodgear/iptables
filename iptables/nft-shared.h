@@ -161,6 +161,9 @@ void save_rule_details(const struct iptables_command_state *cs,
 		       const char *outiface,
 		       unsigned const char *outiface_mask);
 void nft_ipv46_save_chain(const struct nftnl_chain *c, const char *policy);
+void wg_save_matches_and_target(const struct iptables_command_state *cs,
+			     bool goto_flag, const void *fw,
+			     unsigned int format);
 void save_matches_and_target(const struct iptables_command_state *cs,
 			     bool goto_flag, const void *fw,
 			     unsigned int format);

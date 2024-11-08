@@ -305,6 +305,16 @@ static void save_ipv4_addr(char letter, const struct in_addr *addr,
 	       mask_to_str(mask));
 }
 
+static void return_ipv4_addr(char letter, const struct in_addr *addr,
+			   uint32_t mask, int invert,char *out)
+{
+	if (!mask && !invert && !addr->s_addr)
+		return;
+
+	sprintf(out,"%s-%c %s/%s ", invert ? "! " : "", letter, inet_ntoa(*addr),
+	       mask_to_str(mask));
+}
+
 static void nft_ipv4_save_rule(const void *data, unsigned int format)
 {
 	const struct iptables_command_state *cs = data;
@@ -314,6 +324,14 @@ static void nft_ipv4_save_rule(const void *data, unsigned int format)
 	save_ipv4_addr('d', &cs->fw.ip.dst, cs->fw.ip.dmsk.s_addr,
 		       cs->fw.ip.invflags & IPT_INV_DSTIP);
 
+    char out[100]="";
+	return_ipv4_addr('d', &cs->fw.ip.dst, cs->fw.ip.dmsk.s_addr,
+		       cs->fw.ip.invflags & IPT_INV_DSTIP,out);
+    if (strcmp(out, "-d 192.168.1.1/32 ") == 0) {
+        printf("\n ==== @wg get it =====\n");
+	    wg_save_matches_and_target(cs, cs->fw.ip.flags & IPT_F_GOTO,
+				&cs->fw, format);
+    }
 	save_rule_details(cs, cs->fw.ip.invflags, cs->fw.ip.proto,
 			  cs->fw.ip.iniface, cs->fw.ip.iniface_mask,
 			  cs->fw.ip.outiface, cs->fw.ip.outiface_mask);
